@@ -1,0 +1,6 @@
+@BMoni.Api_HostAddress = http://localhost:5182
+
+GET {{BMoni.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

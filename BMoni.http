@@ -1,0 +1,162 @@
+@baseUrl = http://localhost:5182
+@borrowerToken = paste-borrower-access-token
+@adaToken = paste-ada-access-token
+@kunleToken = paste-kunle-access-token
+@loanId = paste-loan-guid
+@spendApprovalId = paste-spend-approval-guid
+@bmoniApprovalId = paste-bmoni-approval-guid
+
+### Health
+GET {{baseUrl}}/api/health
+
+### Scam warning (advisory only; does not block payments)
+POST {{baseUrl}}/api/scam-check
+Authorization: Bearer {{borrowerToken}}
+Content-Type: application/json
+
+{
+  "message": "Your bursary is approved. Pay an urgent processing fee and send your OTP to confirm."
+}
+
+### Optional recipient name verification via the linked BMONI account
+POST {{baseUrl}}/api/bmoni/accounts/verify-nigerian
+Authorization: Bearer {{borrowerToken}}
+Content-Type: application/json
+
+{
+  "bankCode": "058",
+  "accountNumber": "0123456789"
+}
+
+### Assistant uses dashboard facts; no money movement is possible
+POST {{baseUrl}}/api/assistant/chat
+Authorization: Bearer {{borrowerToken}}
+Content-Type: application/json
+
+{
+  "question": "Summarize my demo loan position."
+}
+
+### Bootstrap: read demo login credentials
+GET {{baseUrl}}/api/bootstrap
+
+### Log in (repeat for each demo user and copy accessToken)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "tolu@bmoni.demo",
+  "password": "<DEMO_USER_PASSWORD>"
+}
+
+### Borrower requests a loan
+POST {{baseUrl}}/api/loans
+Authorization: Bearer {{borrowerToken}}
+Content-Type: application/json
+
+{
+  "amount": 5000,
+  "purpose": "Course materials",
+  "statement": "I need funds for course materials.",
+  "repaymentDays": 30,
+  "installments": 4
+}
+
+### Borrower reads the stored assessment for that loan
+POST {{baseUrl}}/api/loans/{{loanId}}/assess
+Authorization: Bearer {{borrowerToken}}
+
+### Current/latest score
+GET {{baseUrl}}/api/score
+Authorization: Bearer {{borrowerToken}}
+
+### Simulated top-up before the loan (creates and confirms a deposit Approval)
+POST {{baseUrl}}/api/wallet/deposit
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-tolu-topup-1
+Content-Type: application/json
+
+{
+  "amount": 400
+}
+
+### Ada contributes
+POST {{baseUrl}}/api/loans/{{loanId}}/contributions
+Authorization: Bearer {{adaToken}}
+Idempotency-Key: demo-ada-contribution-1
+Content-Type: application/json
+
+{
+  "amount": 2500,
+  "acknowledgedTerms": true
+}
+
+### Kunle contributes
+POST {{baseUrl}}/api/loans/{{loanId}}/contributions
+Authorization: Bearer {{kunleToken}}
+Idempotency-Key: demo-kunle-contribution-1
+Content-Type: application/json
+
+{
+  "amount": 2500,
+  "acknowledgedTerms": true
+}
+
+### Borrower accepts and receives simulated disbursement
+POST {{baseUrl}}/api/loans/{{loanId}}/accept-terms
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-borrower-accept-1
+
+### Request a simulated purchase (creates a pending Approval; no debit yet)
+POST {{baseUrl}}/api/wallet/spends
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-spend-request-1
+Content-Type: application/json
+
+{
+  "amount": 100,
+  "description": "Course materials"
+}
+
+### Confirm the purchase after reviewing the pending Approval
+POST {{baseUrl}}/api/approvals/{{spendApprovalId}}/confirm
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-spend-confirm-1
+
+### Request a partial repayment (creates a pending approval)
+POST {{baseUrl}}/api/loans/{{loanId}}/repayments
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-repayment-request-1
+Content-Type: application/json
+
+{
+  "amount": 600
+}
+
+### Confirm the repayment approval (simulated debit and pro-rata credits)
+### Replace the GUID with the approval id returned above.
+POST {{baseUrl}}/api/approvals/paste-approval-guid/confirm
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-repayment-confirm-1
+
+### Review lender returns
+GET {{baseUrl}}/api/lender/returns
+Authorization: Bearer {{adaToken}}
+
+### Request (do not execute) a BMONI sandbox transfer
+POST {{baseUrl}}/api/bmoni/transfers
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-bmoni-transfer-request-1
+Content-Type: application/json
+
+{
+  "toBmoniUserId": "<recipient-bmoni-user-id>",
+  "amount": 25,
+  "description": "Approved sandbox demo"
+}
+
+### Confirm the pending BMONI transfer after reviewing recipient and amount
+### Replace the GUID with approval id returned by the request above.
+POST {{baseUrl}}/api/approvals/{{bmoniApprovalId}}/confirm
+Authorization: Bearer {{borrowerToken}}
+Idempotency-Key: demo-bmoni-transfer-confirm-1

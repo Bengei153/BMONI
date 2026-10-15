@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/BMoni.Api/BMoni.Api.csproj" />
+  <Project Path="src/BMoni.Application/BMoni.Application.csproj" />
+  <Project Path="src/BMoni.Domain/BMoni.Domain.csproj" />
+  <Project Path="src/BMoni.Infrastructure/BMoni.Infrastructure.csproj" />
+  <Project Path="tests/BMoni.Domain.Tests/BMoni.Domain.Tests.csproj" />
+  <Project Path="tests/BMoni.Infrastructure.Tests/BMoni.Infrastructure.Tests.csproj" />
+</Solution>
