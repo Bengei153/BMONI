@@ -52,7 +52,7 @@ if (origins.Length > 0)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "B Moni API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "LMoni API", Version = "v1" });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     { Name = "Authorization", Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT", In = ParameterLocation.Header });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement

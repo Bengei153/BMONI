@@ -1,4 +1,4 @@
-# B Moni peer lending demo
+# LMoni peer lending demo
 
 A sandbox-first API for a student microfinance demo. The lending ledger is simulated and keeps every deposit, loan contribution, purchase, disbursement, repayment, and lender return behind an explicit approval. BMONI's REST integration is available for sandbox onboarding, account-name checks, wallet reads, and separately approved sandbox transfers.
 
