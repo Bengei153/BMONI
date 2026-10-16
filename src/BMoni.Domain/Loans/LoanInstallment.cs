@@ -45,7 +45,7 @@ public sealed class LoanInstallment
 
     public decimal ApplyPayment(decimal amount)
     {
-        if (Status is InstallmentStatus.Paid or InstallmentStatus.Defaulted || amount <= 0 ||
+        if (Status == InstallmentStatus.Paid || amount <= 0 ||
             decimal.Round(amount, 2) != amount)
             throw new InvalidOperationException("Payment cannot be applied to this installment.");
         var applied = Math.Min(amount, Outstanding);

@@ -150,6 +150,16 @@ internal sealed class PlatformService(AppDbContext db, IConfiguration configurat
         if (!user.HasRole(UserRole.Borrower)) throw new UnauthorizedAccessException("Borrower role is required.");
         var wallet = await GetWalletEntityAsync(userId, cancellationToken);
         var now = DateTimeOffset.UtcNow;
+        var hasDefaultedLoan = await db.Loans.AsNoTracking().AnyAsync(loan =>
+            loan.BorrowerId == userId && loan.Status == LoanStatus.Defaulted, cancellationToken);
+        var activeLoanIds = await db.Loans.AsNoTracking().Where(loan =>
+            loan.BorrowerId == userId && loan.Status == LoanStatus.Active).Select(loan => loan.Id).ToArrayAsync(cancellationToken);
+        var installments = activeLoanIds.Length == 0 ? new List<LoanInstallment>() : await db.LoanInstallments.AsNoTracking()
+            .Where(installment => activeLoanIds.Contains(installment.LoanId)).ToListAsync(cancellationToken);
+        var hasOverdueInstallment = installments.Any(installment => installment.Outstanding > 0 &&
+            (installment.Status is InstallmentStatus.Late or InstallmentStatus.Defaulted || now > installment.DueAt.AddDays(3)));
+        if (hasDefaultedLoan || hasOverdueInstallment)
+            throw new InvalidOperationException("You cannot request another loan while you have an overdue or defaulted balance. Repay it first.");
         var deposits = await db.LedgerEntries.AsNoTracking().Where(item => item.UserId == userId && item.Type == "SandboxDeposit")
             .ToListAsync(cancellationToken);
         var recentDeposits = deposits.Where(item => item.CreatedAt >= now.AddDays(-90)).ToArray();
@@ -313,6 +323,8 @@ internal sealed class PlatformService(AppDbContext db, IConfiguration configurat
         }
         var loan = await FindLoanAsync(loanId, cancellationToken);
         if (loan.BorrowerId != userId) throw new UnauthorizedAccessException("Only the borrower can request a repayment.");
+        if (loan.Status is not (LoanStatus.Active or LoanStatus.Defaulted))
+            throw new InvalidOperationException("Repayments can only be requested for active or defaulted loans.");
         if (amount <= 0 || amount > loan.Outstanding || decimal.Round(amount, 2) != amount)
             throw new ArgumentOutOfRangeException(nameof(amount), "Payment must be positive and cannot exceed the outstanding amount.");
         var approval = new Approval(loanId, userId, ApprovalType.Repayment, amount, idempotencyKey, DateTimeOffset.UtcNow);

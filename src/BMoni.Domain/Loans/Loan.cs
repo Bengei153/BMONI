@@ -101,7 +101,8 @@ public sealed class Loan
 
     public void ApplyRepayment(decimal amount)
     {
-        if (Status != LoanStatus.Active) throw new InvalidOperationException("Only an active loan can be repaid.");
+        if (Status is not (LoanStatus.Active or LoanStatus.Defaulted))
+            throw new InvalidOperationException("Only an active or defaulted loan can be repaid.");
         if (amount <= 0 || decimal.Round(amount, 2) != amount || amount > Outstanding)
             throw new ArgumentOutOfRangeException(nameof(amount), "Payment must be positive, to 2 decimal places, and no greater than the outstanding amount.");
         RepaidAmount += amount;
